@@ -236,7 +236,17 @@ void BaseChatMesh::onPeerDataRecv(mesh::Packet* packet, uint8_t type, int sender
 
     if (flags == TXT_TYPE_PLAIN) {
       from.lastmod = getRTCClock()->getCurrentTime(); // update last heard time
-      onMessageRecv(from, packet, timestamp, (const char *) &data[5]);  // let UI know
+
+      if (strcmp((const char *)&data[5], "/ping") == 0) {
+        char reply[32];
+        snprintf(reply, sizeof(reply), "Pong! SNR: %.2f", packet->getSNR());
+        uint32_t expected_ack;
+        uint32_t est_timeout;
+
+        sendMessage(from, getRTCClock()->getCurrentTimeUnique(), TXT_TYPE_PLAIN, reply, expected_ack, est_timeout);
+      } else {
+        onMessageRecv(from, packet, timestamp, (const char *) &data[5]);  // let UI know
+      }
 
       int text_len = strlen((char *)&data[5]);
       uint8_t ack_hash[6];    // calc truncated hash of the message timestamp + text + sender pub_key, to prove to sender that we got it
